@@ -1,0 +1,223 @@
+to generate an SSH key pair
+ ssh-keygen -t rsa -b 4096
+ 
+ Generating public/private rsa key pair.
+Enter file in which to save the key (/home/x_99070595/.ssh/id_rsa): 
+Created directory '/home/x_99070595/.ssh'.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/x_99070595/.ssh/id_rsa.
+Your public key has been saved in /home/x_99070595/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:0mKoNw5K+2G+CfBHqw4QFXF9Ca/nPHo3qr4DOcG//1w x_99070595@8b2d03e97500
+The key's randomart image is:
++---[RSA 4096]----+
+|  +o.... .       |
+| . .  ..o        |
+|.  .   ..        |
+| .  o. o         |
+|o   o+= S        |
+|o. o+o.*         |
+|.o+o=o .+   E    |
+|.o=*o.o..oo.     |
+|.o+=o.=*o+o.     |
++----[SHA256]-----+
+
+Add your keys to the ssh-agent with the following two commands: 
+eval "$(ssh-agent -s)" 
+ssh-add ~/.ssh/id_rsa
+
+x_99070595@cloudshell:~ (us-ashburn-1)$ eval "$(ssh-agent -s)"
+Agent pid 883
+x_99070595@cloudshell:~ (us-ashburn-1)$ ssh-add ~/.ssh/id_rsa
+Identity added: /home/x_99070595/.ssh/id_rsa (/home/x_99070595/.ssh/id_rsa)
+
+.ssh/id_rsa.pub
+
+
+
+Create instance VM-01
+Public IP address 150.136.89.178
+
+into your instance with your SSH key filename and public IP address
+ssh opc@<public_ip_address>
+    ssh opc@150.136.89.178
+	
+( If you get a Connection refused error, wait a minute before trying again. It’s 
+possible for the VM to show it is RUNNING but sshd hasn’t finished booting. 
+If you get the error that your key has permissions that are too open, use this to 
+update permissions: 
+$ chmod 600 <private_key> )
+
+x_99070595@cloudshell:~ (us-ashburn-1)$ ssh opc@150.136.89.178
+FIPS mode initialized
+The authenticity of host '150.136.89.178 (150.136.89.178)' can't be established.
+ECDSA key fingerprint is SHA256:zDl63P1FNPax3rNatAVIj3DOrR0RU/7/ABataMuE1F0.
+ECDSA key fingerprint is SHA1:UZQXtR5u8rpmRStMEVxOOikaCDw.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '150.136.89.178' (ECDSA) to the list of known hosts.
+Activate the web console with: systemctl enable --now cockpit.socket
+
+[opc@vm-01 ~]$
+
+Install Apache webserver (httpd), configure it to start whenever the VM boots, and 
+activate it. 
+$ sudo dnf install httpd 
+$ sudo systemctl enable httpd
+Created symlink /etc/systemd/system/multi-user.target.wants/httpd.service → /usr/lib/systemd/system/httpd.service.
+$ sudo systemctl start httpd
+
+
+Open the OS firewall to HTTP. 
+$ sudo firewall-cmd --permanent --add-service=http 
+$ sudo firewall-cmd --reload
+
+
+
+
+2. Set Up Webserver with Cloud-init 
+In the Create Instance:
+Click Show advanced options. 
+i. Under the Management tab, choose Paste cloud-init script. 
+ii. Type the following commands: 
+#!/bin/sh 
+sudo dnf install httpd --assumeyes --quiet 
+sudo systemctl enable httpd 
+sudo systemctl start httpd 
+sudo firewall-offline-cmd --add-service=http 
+systemctl restart firewalld 
+echo '<!doctype html><html><body><h1>This is myoracle.com!</h1></body></html>' | sudo tee /var/www/html/index.html
+
+Note: There are a couple differences between these commands and the ones we 
+used through SSH: 
+• 
+We added two flags for dnf to (1) assume we answer \yes\ when it asks 
+whether to install httpd and dependencies and (2) limit logging. 
+• 
+We used firewall-offline-cmd and systemctl instead of firewall-
+cmd because firewalld is not fully online during the boot process. 
+• 
+We also added a line at the end to pass a basic webpage to Apache. This is to 
+suppress warnings when we add a load balancer later.
+
+3.Create Private Load Balancer and Autoscale Compute Pools
+Create Instance VM-CLIENT.
+Public IP 129.213.151.242 
+
+Create Load Balancer
+
+Create Instance INST-CF
+
+#!/bin/sh 
+sudo dnf install httpd --assumeyes --quiet 
+sudo systemctl enable httpd 
+sudo systemctl start httpd 
+sudo firewall-offline-cmd --add-service=http 
+systemctl restart firewalld 
+echo '<!doctype html><html><body><h1>This is myoracle.com! </h1></body></html>' | sudo tee /var/www/html/index.html 
+
+
+
+Test the Autoscaling Configuration
+
+SSH into the server through the client with the following command. The inner proxy 
+command connects to the public VM, then the outer command connects to the 
+private VM. Replace the angle bracket labels with the appropriate content. 
+
+$ ssh -o ProxyCommand="ssh -W %h:%p -p 22 opc@150.136.36.160" -p 22 opc@10.0.2.143 
+
+Enter yes twice to confirm that you want to SSH into both machines. 
+d.   Run the following commands in succession to make the CPU perform matrix multiplication on all cores (only one in this instance) for 15 minutes. 
+$ sudo dnf install stress-ng --assumeyes 
+$ stress-ng --matrix 0 -t 15m > /dev/null 2>&1 & 
+$ top 
+Note: The code > /dev/null 2>&1 & suppresses the output and makes stress-ng 
+run in the background. This way, you can view the running process with top.
+
+
+To test the webservers behind the load balancer. Log in to your client VM using SSH in 
+Cloud Shell and use curl to retrieve the home page: 
+$ ssh opc@<client-public-ip-address> 
+ssh opc@129.213.151.242 
+$ curl http://<private-load-balancer-ip-address>
+curl http://10.0.1.16
+You should get the webpage in response: 
+<!doctype html><html><body><h1>This is 
+myoracle.com!</h1></body></html>
+
+
+
+Create a Private Zone Using DNS Management
+Test the Server 
+1. 
+To test whether Private DNS is working, log in to your client VM using SSH in Cloud Shell 
+and enter following commands in succession. 
+$ ssh opc@<client-machine-public-ip> 
+$ curl -k http://myoracle.com 
+$ curl -k http://web.myoracle.com 
+2. Both curl commands should return this: 
+<!doctype html><html><body><h1>This is myoracle.com! </h1></body></html> 
+3.  Exit the SSH session:  
+$ exit 
+
+
+Configure Front-end SSL with Load Balancing
+Create an SSL/TLS Certificate
+Use the following command to generate an RSA key pair and associated certificate: 
+$ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365 -nodes -subj '/CN=myoracle.com' 
+3.   Enter ls and you should see both cert.pem and key.pem. 
+4.   Download both cert.pem and key.pem: 
+a.   Click the gear at the top-right corner of Cloud Shell. 
+b.   Click Download. 
+c. 
+Type the name of the file you want to download (cert.pem) 
+d.   Repeat Step a toStep c for key.pem 
+
+
+To test if the certificate is working, log in to the client VM (<REGION>-OP-LAB01-1-VM-CLIENT) using SSH in Cloud Shell. Return to the Instance Details page in Compute if you 
+need the IP address. 
+$ ssh opc@<client-public-IP-address> 
+6.   Use curl to send an HTTPS request for the webpage. The -k flag is needed to prevent curl from requiring a verified (non-self-signed) certificate. 
+$ curl -k https://myoracle.com 
+You should get the following webpage as a response: 
+<!doctype html><html><body><h1>This is myoracle.com!</h1></body></html> 
+7.   Repeat the curl command for the CNAME. 
+$ curl -k https://web.myoracle.com 
+You should get the same webpage as a response. 
+
+
+VM-022 public ip address 150.136.68.4
+ssh opc@150.136.68.4
+
+
+
+New compartment Compartment: 99069114-C01
+ocid1.compartment.oc1..aaaaaaaacaxk3iiktmtc7ekppg7jnb7dd5a4hto7476pxu565zmaho6aep5a
+
+x_99069114@cloudshell:~ (us-ashburn-1)$ ssh-keygen -t rsa -b 4096 
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/x_99069114/.ssh/id_rsa): 
+Created directory '/home/x_99069114/.ssh'.
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/x_99069114/.ssh/id_rsa.
+Your public key has been saved in /home/x_99069114/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:pioy+R0GE9EOl/+5Wd71HFgXwG8GJviUhyJdweCTNZM x_99069114@d132f9e1f9b7
+The key's randomart image is:
++---[RSA 4096]----+
+|  .. .  ..=**..  |
+|  ..+  ..+oEo= . |
+|  .+ .  .++ + o .|
+|   .. .   ..   =.|
+|  o    .S.    = .|
+|   o   oo .  ... |
+| .  o .  = . . o.|
+|+ .o o  o . .   o|
+| +..o            |
++----[SHA256]-----+
+x_99069114@cloudshell:~ (us-ashburn-1)$  eval "$(ssh-agent -s)"
+Agent pid 2216
+x_99069114@cloudshell:~ (us-ashburn-1)$ ssh-add ~/.ssh/id_rsa
+Identity added: /home/x_99069114/.ssh/id_rsa (/home/x_99069114/.ssh/id_rsa)
+x_99069114@cloudshell:~ (us-ashburn-1)$ 
