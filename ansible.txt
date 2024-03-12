@@ -1,0 +1,70 @@
+/hosts.yaml ~/ansible_apache_lab/playbook.yaml -playbook -i ~/ansible_apache_lab 
+
+PLAY [Install and Configure web servers] ***************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Platform linux on host 150.136.112.245 is using the discovered
+Python interpreter at /usr/bin/python3.6, but future installation of another
+Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.13/reference_appendices/interpreter_discovery.html for more information.
+ok: [150.136.112.245]
+[WARNING]: Platform linux on host 132.145.138.70 is using the discovered Python
+interpreter at /usr/bin/python3.6, but future installation of another Python
+interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.13/reference_appendices/interpreter_discovery.html for more information.
+ok: [132.145.138.70]
+
+TASK [Ensure apache is at the latest version] **********************************
+ok: [150.136.112.245]
+ok: [132.145.138.70]
+
+TASK [Ensure apache is running] ************************************************
+changed: [132.145.138.70]
+changed: [150.136.112.245]
+
+PLAY RECAP *********************************************************************
+132.145.138.70             : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+150.136.112.245            : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+x_99069114@codeeditor:~ (us-ashburn-1)$ 
+
+
+
+
+/hosts.yaml ~/ansible_apache_lab/playbook.yaml -playbook -i ~/ansible_apache_lab 
+
+PLAY [Install and Configure web servers] ***************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Platform linux on host 132.145.138.70 is using the discovered Python
+interpreter at /usr/bin/python3.6, but future installation of another Python
+interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.13/reference_appendices/interpreter_discovery.html for more information.
+ok: [132.145.138.70]
+[WARNING]: Platform linux on host 150.136.112.245 is using the discovered
+Python interpreter at /usr/bin/python3.6, but future installation of another
+Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.13/reference_appendices/interpreter_discovery.html for more information.
+ok: [150.136.112.245]
+
+TASK [Ensure apache is at the latest version] **********************************
+ok: [150.136.112.245]
+ok: [132.145.138.70]
+
+TASK [Ensure apache is running] ************************************************
+changed: [132.145.138.70]
+changed: [150.136.112.245]
+
+TASK [Permit traffic in default zone for http service] *************************
+changed: [132.145.138.70]
+changed: [150.136.112.245]
+
+PLAY RECAP *********************************************************************
+132.145.138.70             : ok=4    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+150.136.112.245            : ok=4    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+x_99069114@codeeditor:~ (us-ashburn-1)$ 
