@@ -1,0 +1,1 @@
+compartment_id = "ocid1.compartment.oc1..aaaaaaaahgchdxyzhm44gmmvkjb74bal7uvdlms4emmiyyqfovf6fvfiypja"
